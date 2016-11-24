@@ -10,7 +10,7 @@ def run(root,mybackground):
         root.update()
         widget_updater(mybackground)
 
-        fps_counter = fps_counter+1
+        fps_counter += 1
         if time() - time_var > 1:
             print("The MFD is running at %s FPS"%fps_counter)
             fps_counter=0

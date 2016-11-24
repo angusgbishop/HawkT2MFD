@@ -4,9 +4,12 @@ import os
 def get_var(data_var):
 
     jsonfile = "data.json"
-    with open(jsonfile,'r') as file:
-        file_data = file.read()
-    file.close()
+    try:
+        with open(jsonfile,'r') as file:
+            file_data = file.read()
+        file.close()
+    except:
+        return
     try:
         json_data = loads(file_data)
     except:

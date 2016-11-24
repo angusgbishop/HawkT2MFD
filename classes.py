@@ -122,7 +122,7 @@ class elevPage(mfdPage):
     def __init__(self, master):
         active_buttons = {11: "MAP", 12: "HSI", 13: "DCRS", 15: "RWI"}
         mfdPage.__init__(self, master, active_buttons)
-        attitudeIndicator(self, (self.relx(0.5), self.rely(0.5)), ('pitch', 'roll', 'hdg'))
+        attitudeIndicator(self, (self.relx(0.55), self.rely(0.55)), ('pitch', 'roll', 'hdg'))
 
 
 class enginePage(mfdPage):
@@ -256,13 +256,15 @@ class attitudeIndicator():
     def __init__(self, master, coord, update_variable, **kwargs):
 
         self.params = {}
-        self.params["width"] = master.relx(0.75)
-        self.params["height"] = master.rely(0.75)
+        self.params["width"] = master.relx(0.6)
+        self.params["height"] = master.rely(0.6)
         self.params["color"] = "white"
         self.params["disp_text"] = 'NaN'
         self.params["update_variable"] = update_variable
         self.params["angleLines"] = {}
+        self.params["headingLines"] = {}
         self.params["pitch_range"] = 45
+        self.params["hdg_range"] = 60
 
         # Custom values
         if kwargs is not None:
@@ -275,13 +277,19 @@ class attitudeIndicator():
         midpoint = (self.sub_canvas.winfo_reqwidth() / 2, self.sub_canvas.winfo_reqheight() / 2)
         self.midpoint = midpoint
 
+        self.radii = ((self.params["height"] - 10) / 2)
+
         bounding_box = (
-        midpoint[0] - ((self.params["width"] - 10) / 2), midpoint[1] - ((self.params["height"] - 10) / 2),
-        midpoint[0] + ((self.params["width"] - 10) / 2), midpoint[1] + ((self.params["height"] - 10) / 2))
-        self.sub_canvas.create_oval(bounding_box, fill="#F2BF18", outline="white", width=8)
-        self.sky = self.sub_canvas.create_arc(bounding_box, fill="#1873F2", outline="white", style=CHORD, width=5)
+            midpoint[0] - ((self.params["width"] - 10) / 2), midpoint[1] - ((self.params["height"] - 10) / 2),
+            midpoint[0] + ((self.params["width"] - 10) / 2), midpoint[1] + ((self.params["height"] - 10) / 2))
+
+
+
+        self.sub_canvas.create_oval(bounding_box, fill="#F2BF18", outline="white", width=5)
+        self.sky = self.sub_canvas.create_arc(bounding_box, fill="#1873F2", outline="white", style=CHORD, width=3)
 
         self.create_pitch_lines()
+        self.create_heading_lines()
 
         self.sub_canvas.create_rectangle((midpoint[0] - 5, midpoint[1] - 5, midpoint[0] + 5, midpoint[1] + 5),
                                          outline="black")
@@ -297,31 +305,32 @@ class attitudeIndicator():
         sky_vals = self.get_chord_start(vars["pitch"], vars["roll"])
         self.sub_canvas.itemconfig(self.sky, start=sky_vals[0], extent=sky_vals[1])
         self.update_angle_lines(vars["pitch"], vars["roll"])
+        self.update_heading_lines(vars["hdg"])
 
     def get_chord_start(self, pitch, roll):
         pitch_range = self.params["pitch_range"]
-        roll = roll + 180
+        roll += 180  # Flip sky
 
-        if abs(pitch) <= pitch_range:
-            rollMidline = roll - 90
-            start = ((pitch / pitch_range) + 1) * 90 + rollMidline
-            extent = -2 * (start - rollMidline)
+        if abs(pitch) < pitch_range:
+            roll_midline = roll - 90
+            start = degrees(acos(-pitch / pitch_range)) + roll_midline
+            extent = -2 * (start - roll_midline)
             return (start, extent)
-        elif pitch > pitch_range:
-            return (0, 359.99)
+        elif pitch >= pitch_range:
+            return (0, -359.99)
         elif pitch < pitch_range:
             return (0, 0)
 
     def get_horizon_midpoint(self, pitch, roll):
-        mid_delta = pol2cart(self.params["height"] * (pitch / self.params["pitch_range"]), roll)
-        mid = (self.midpoint[0]+mid_delta[0],self.midpoint[1]+mid_delta[1])
+        mid_delta = pol2cart(self.radii * (pitch / self.params["pitch_range"]), 180 - roll)
+        mid = (self.midpoint[0] + mid_delta[0], self.midpoint[1] + mid_delta[1])
         return mid
 
     def create_pitch_lines(self):
         for each in range(-90, 90):
             if each % 10 == 0:
                 self.params["angleLines"][each] = self.sub_canvas.create_line((0, 0, 0, 0),
-                                                                              width=5, fill="white")
+                                                                              width=2, fill="white")
             elif each % 5 == 0:
                 self.params["angleLines"][each] = self.sub_canvas.create_line((0, 0, 0, 0),
                                                                               width=2, fill="white")
@@ -331,24 +340,58 @@ class attitudeIndicator():
     def update_angle_lines(self, pitch, roll):
         # Refresh or create the pitch and roll angle lines
         angleLines = self.params["angleLines"]
-        # print(angleLines
         horiz = self.get_horizon_midpoint(pitch, roll + 90)
         for lineIncrement, id in angleLines.items():
-            if lineIncrement < abs(pitch) - self.params["pitch_range"]:  # If the line can be displayed on screen
+            if self.params["pitch_range"] * 0.95 - pitch > lineIncrement > -self.params[
+                "pitch_range"] * 0.95 - pitch:  # If the line can be displayed on screen
 
-                line_offset = pol2cart((self.params["height"] * (lineIncrement / self.params["pitch_range"])), roll)
+                self.sub_canvas.itemconfig(id, fill="white")
+
+                if lineIncrement % 10 == 0:
+                    pitch_line_length = 50
+                else:
+                    pitch_line_length = 20
+
+                line_offset = pol2cart(self.radii * (lineIncrement / self.params["pitch_range"]), 90 - roll)
 
                 midx = line_offset[0] + horiz[0]
                 midy = line_offset[1] + horiz[1]
 
-                self.sub_canvas.coords(id, 0,0,midx,midy)
+                self.sub_canvas.coords(id, line_coords(pitch_line_length, (midx, midy), -roll))
                 # print("Adjusting the %s pitch line"%lineIncrement)
                 pass
             else:
                 # "Switch off" the bar
                 self.sub_canvas.itemconfigure(id, fill="")
-
+                pass
         return
 
-    def create_angled_line(self, centrepoint, radius, angle):
-        return
+    def create_heading_lines(self):
+        for each in range(0, 360):
+            if each % 30 == 0:
+                self.params["headingLines"][each] = self.sub_canvas.create_line((0, 0, 0, 0),
+                                                                                width=3, fill="white")
+            elif each % 10 == 0:
+                self.params["headingLines"][each] = self.sub_canvas.create_line((0, 0, 0, 0),
+                                                                                width=2, fill="white")
+            else:
+                pass
+
+    def update_heading_lines(self, hdg):
+        heading_lines = self.params["headingLines"]
+
+        for headingVal, id in heading_lines.items():
+            if (hdg + self.params["hdg_range"]) > headingVal > (hdg - self.params["hdg_range"]):
+                self.sub_canvas.itemconfig(id, fill="white")
+
+                if headingVal % 10 == 0:
+                    line_length = 15
+                else:
+                    line_length = 10
+
+                hdg_angle = headingVal - hdg
+
+                self.sub_canvas.coords(id, radius_line_coords(self.midpoint,self.radii+10,hdg_angle-90,line_length))
+
+            else:
+                self.sub_canvas.itemconfigure(id, fill="")
