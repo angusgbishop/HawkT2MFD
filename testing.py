@@ -5,8 +5,8 @@ from time import sleep
 
 def testing_run():
     while True:
-        for x in range (1,500):
-            y = round(x/500,3)
+        for x in range (1,200):
+            y = round(x/200,3)
             write_var("engine_rpm_percentage",y)
             write_var("egt",y)
             write_var("port_fuel",int(1020*y))

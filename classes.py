@@ -256,15 +256,17 @@ class attitudeIndicator():
     def __init__(self, master, coord, update_variable, **kwargs):
 
         self.params = {}
-        self.params["width"] = master.relx(0.6)
-        self.params["height"] = master.rely(0.6)
+        self.params["width"] = master.relx(0.9)
+        self.params["height"] = master.rely(0.9)
         self.params["color"] = "white"
         self.params["disp_text"] = 'NaN'
         self.params["update_variable"] = update_variable
         self.params["angleLines"] = {}
+        self.params["angleText"] = {}
         self.params["headingLines"] = {}
+        self.params["hdg_text"] = {}
         self.params["pitch_range"] = 45
-        self.params["hdg_range"] = 60
+        self.params["hdg_range"] = 35
 
         # Custom values
         if kwargs is not None:
@@ -277,11 +279,11 @@ class attitudeIndicator():
         midpoint = (self.sub_canvas.winfo_reqwidth() / 2, self.sub_canvas.winfo_reqheight() / 2)
         self.midpoint = midpoint
 
-        self.radii = ((self.params["height"] - 10) / 2)
+        self.radii = ((self.params["height"] - 150) / 2)
 
         bounding_box = (
-            midpoint[0] - ((self.params["width"] - 10) / 2), midpoint[1] - ((self.params["height"] - 10) / 2),
-            midpoint[0] + ((self.params["width"] - 10) / 2), midpoint[1] + ((self.params["height"] - 10) / 2))
+            midpoint[0] - self.radii, midpoint[1] - self.radii,
+            midpoint[0] + self.radii, midpoint[1] + self.radii)
 
 
 
@@ -342,8 +344,7 @@ class attitudeIndicator():
         angleLines = self.params["angleLines"]
         horiz = self.get_horizon_midpoint(pitch, roll + 90)
         for lineIncrement, id in angleLines.items():
-            if self.params["pitch_range"] * 0.95 - pitch > lineIncrement > -self.params[
-                "pitch_range"] * 0.95 - pitch:  # If the line can be displayed on screen
+            if self.params["pitch_range"] * 0.95 - pitch > lineIncrement > -self.params["pitch_range"] * 0.95 - pitch:  # If the line can be displayed on screen
 
                 self.sub_canvas.itemconfig(id, fill="white")
 
@@ -371,7 +372,9 @@ class attitudeIndicator():
             if each % 30 == 0:
                 self.params["headingLines"][each] = self.sub_canvas.create_line((0, 0, 0, 0),
                                                                                 width=3, fill="white")
-            elif each % 10 == 0:
+
+                self.params["hdg_text"][each] = self.sub_canvas.create_text((0, 0), text=str(each),fill="white",font=("Helvetica", 10,"bold"))
+            elif each % 5 == 0:
                 self.params["headingLines"][each] = self.sub_canvas.create_line((0, 0, 0, 0),
                                                                                 width=2, fill="white")
             else:
@@ -380,18 +383,31 @@ class attitudeIndicator():
     def update_heading_lines(self, hdg):
         heading_lines = self.params["headingLines"]
 
-        for headingVal, id in heading_lines.items():
+        for headingVal, id  in heading_lines.items():
             if (hdg + self.params["hdg_range"]) > headingVal > (hdg - self.params["hdg_range"]):
-                self.sub_canvas.itemconfig(id, fill="white")
-
-                if headingVal % 10 == 0:
-                    line_length = 15
-                else:
-                    line_length = 10
+                self.sub_canvas.itemconfig(id, fill="light green")
 
                 hdg_angle = headingVal - hdg
 
-                self.sub_canvas.coords(id, radius_line_coords(self.midpoint,self.radii+10,hdg_angle-90,line_length))
+                if headingVal % 30 == 0:
+                    line_length = 25
+                    text_id = self.params["hdg_text"][headingVal]
+                    text_offset = pol2cart(self.radii + 22, (hdg_angle * 2) - 90)
+                    self.sub_canvas.itemconfigure(text_id, fill="light green")
+                    self.sub_canvas.coords(text_id,(self.midpoint[0]+text_offset[0],self.midpoint[1]+text_offset[1]))
+                elif headingVal % 10 == 0:
+                    line_length = 17
+                else:
+                    line_length = 12
+
+
+                self.sub_canvas.coords(id, radius_line_coords(self.midpoint,self.radii+60,(hdg_angle*2)-90,line_length))
 
             else:
                 self.sub_canvas.itemconfigure(id, fill="")
+                try:
+                    self.sub_canvas.itemconfigure(self.params["hdg_text"][headingVal],fill="")
+                    pass
+                except:
+                    pass
+                pass
