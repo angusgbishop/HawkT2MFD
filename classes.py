@@ -120,10 +120,21 @@ class standybyPage(mfdPage):
 
 class elevPage(mfdPage):
     def __init__(self, master):
-        active_buttons = {11: "MAP", 12: "HSI", 13: "DCRS", 15: "RWI"}
+        active_buttons = {11: "MAP", 12: "HSI", 13: "DCRS", 15: "RWI", 16:"RNG",17:"TAC",18:"ILS",1:"WPT",20:"FLT"}
         mfdPage.__init__(self, master, active_buttons)
         attitudeIndicator(self, (self.relx(0.55), self.rely(0.55)), ('pitch', 'roll', 'hdg'))
+        updateableTextbox(self, (self.relx(0.85), self.rely(0.06)),('BRG'),height = 10)
+        updateableTextbox(self, (self.relx(0.85),self.rely(0.1)),('NM'),height = 10)
+        updateableTextbox(self, (self.relx(0.85),self.rely(0.14)),('MIN'),height = 10)
+        updateableTextbox(self, (self.relx(0.5),self.rely(0.06)),('hdg'),height = 10)
+        updateableTextbox(self, (self.relx(0.2),self.rely(0.06)),('CRS'),height = 10)
+        updateableTextbox(self, (self.relx(0.2),self.rely(0.1)),('GS'),height = 10)
 
+        self.screen.create_text((self.relx(0.95), self.rely(0.06)), text="BRG", fill="green")
+        self.screen.create_text((self.relx(0.95), self.rely(0.1)), text="NM", fill="green")
+        self.screen.create_text((self.relx(0.95), self.rely(0.14)), text="MIN", fill="green")
+        self.screen.create_text((self.relx(0.4), self.rely(0.1)), text="CRS", fill="green")
+        self.screen.create_text((self.relx(0.7), self.rely(0.1)), text="GS", fill="green")
 
 class enginePage(mfdPage):
     def __init__(self, master):
@@ -223,19 +234,26 @@ class updateableTextbox():
         self.params["disp_text"] = 'NaN'
         self.params["update_variable"] = update_variable
         self.params["boxed"] = False
+        self.params["justify"] = "right"
+        self.params["font"] = "arial 10"
 
         # Custom values
         if kwargs is not None:
             for arg, val in kwargs.items():
                 self.params[arg] = val
 
+        if self.params["boxed"]:
+            highThick = 2
+        else:
+            highThick = 0
+
         self.sub_canvas = Canvas(bg="black", width=self.params["width"], height=self.params["height"],
-                                 highlightthickness=2)
+                                 highlightthickness=highThick)
         master.screen.create_window(coord, window=self.sub_canvas, anchor="center")
         midpoint = (self.sub_canvas.winfo_reqwidth() / 2, self.sub_canvas.winfo_reqheight() / 2)
 
         self.text_id = self.sub_canvas.create_text((midpoint[0], midpoint[1]), text=self.params["disp_text"],
-                                                   fill=self.params["color"], justify="right")
+                                                   fill=self.params["color"], justify=self.params["justify"] ,font=self.params["font"])
 
         master.register_updatable_widget(self, self.params["update_variable"])
 
@@ -384,12 +402,12 @@ class attitudeIndicator():
         heading_lines = self.params["headingLines"]
 
         for headingVal, id  in heading_lines.items():
-            if (hdg + self.params["hdg_range"]) > headingVal > (hdg - self.params["hdg_range"]):
+            if (hdg + self.params["hdg_range"] > headingVal > hdg - self.params["hdg_range"]):
                 self.sub_canvas.itemconfig(id, fill="light green")
 
                 hdg_angle = headingVal - hdg
 
-                if headingVal % 30 == 0:
+                if headingVal % 30 == 0: # If the heading line is a 30 degree division, update the text as well
                     line_length = 25
                     text_id = self.params["hdg_text"][headingVal]
                     text_offset = pol2cart(self.radii + 22, (hdg_angle * 2) - 90)

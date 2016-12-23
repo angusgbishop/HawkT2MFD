@@ -1,11 +1,16 @@
 {
-  "egt": 0.365,
-  "engine_rpm_percentage": 0.365,
-  "fuel_flow": 21,
-  "hdg": 129.6,
-  "pitch": -25.200000000000003,
-  "port_fuel": 372,
-  "roll": -11.134283473062876,
-  "stbd_fuel": 367,
-  "total_fuel": 1764
+  "BRG": 3,
+  "CRS": 15,
+  "GS": 200,
+  "MIN": 30000,
+  "NM": 80,
+  "egt": 0.49,
+  "engine_rpm_percentage": 0.49,
+  "fuel_flow": 29,
+  "hdg": 174.6,
+  "pitch": -1.8000000000000016,
+  "port_fuel": 499,
+  "roll": -22.987409490080697,
+  "stbd_fuel": 499,
+  "total_fuel": 2401
 }

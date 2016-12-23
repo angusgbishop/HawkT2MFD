@@ -52,6 +52,7 @@ def radius_line_coords(midpoint, radius,angle,length):
     (x1,y1) = pol2cart(radius-length,angle)
 
     x0 = x0 + midpoint[0]
+
     x1 = x1 + midpoint[0]
     y0 = y0 + midpoint[1]
     y1 = y1 + midpoint[1]

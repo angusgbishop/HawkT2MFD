@@ -42,7 +42,7 @@ def main():
     root = Tk()
     root.title("Hawk MFD Manager")
     mybackground = background(root)
-    mybackground.change_page(enginePage)
+    mybackground.change_page(elevPage)
     run(root,mybackground)
     #root.mainloop()
 
